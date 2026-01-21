@@ -1,387 +1,350 @@
-import React, { useState } from 'react';
-import { ShoppingCart, Package, TrendingUp } from 'lucide-react';
-
-export default function CakeShopPOS() {
-  const [products, setProducts] = useState([
-    { id: 1, name: 'Chocolate Cake', price: 850, stock: 25, category: 'Chocolate' },
-    { id: 2, name: 'Vanilla Cake', price: 750, stock: 30, category: 'Vanilla' },
-    { id: 3, name: 'Red Velvet Cake', price: 950, stock: 20, category: 'Specialty' },
-    { id: 4, name: 'Strawberry Cake', price: 900, stock: 18, category: 'Fruit' },
-    { id: 5, name: 'Cheesecake', price: 1050, stock: 15, category: 'Specialty' },
-    { id: 6, name: 'Carrot Cake', price: 800, stock: 22, category: 'Specialty' },
-    { id: 7, name: 'Tiramisu Cake', price: 1100, stock: 12, category: 'Specialty' },
-    { id: 8, name: 'Black Forest Cake', price: 950, stock: 16, category: 'Chocolate' }
-  ]);
-
-  const [cart, setCart] = useState([]);
-  const [sales, setSales] = useState([]);
-  const [activeTab, setActiveTab] = useState('pos');
-  const [newProduct, setNewProduct] = useState({ name: '', price: '', stock: '', category: '' });
-  const [statsPeriod, setStatsPeriod] = useState('day');
-
-  const addToCart = (product) => {
-    const existing = cart.find(item => item.id === product.id);
-    if (existing) {
-      setCart(cart.map(item => 
-        item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-      ));
-    } else {
-      setCart([...cart, { ...product, quantity: 1 }]);
-    }
-  };
-
-  const updateQuantity = (id, delta) => {
-    setCart(cart.map(item => {
-      if (item.id === id) {
-        const newQty = item.quantity + delta;
-        return newQty > 0 ? { ...item, quantity: newQty } : item;
-      }
-      return item;
-    }).filter(item => item.quantity > 0));
-  };
-
-  const removeFromCart = (id) => {
-    setCart(cart.filter(item => item.id !== id));
-  };
-
-  const completeSale = () => {
-    if (cart.length === 0) {
-      alert('Cart is empty');
-      return;
-    }
-
-    const sale = {
-      id: Date.now(),
-      items: [...cart],
-      total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-      date: new Date().toISOString()
-    };
-
-    setProducts(products.map(product => {
-      const cartItem = cart.find(item => item.id === product.id);
-      if (cartItem) {
-        return { ...product, stock: product.stock - cartItem.quantity };
-      }
-      return product;
-    }));
-
-    setSales([sale, ...sales]);
-    setCart([]);
-    alert('Sale completed successfully!');
-  };
-
-  const addProduct = () => {
-    if (!newProduct.name || !newProduct.price || !newProduct.stock) {
-      alert('Please fill in all fields');
-      return;
-    }
-
-    const product = {
-      id: Date.now(),
-      name: newProduct.name,
-      price: parseFloat(newProduct.price),
-      stock: parseInt(newProduct.stock),
-      category: newProduct.category || 'Other'
-    };
-
-    setProducts([...products, product]);
-    setNewProduct({ name: '', price: '', stock: '', category: '' });
-    alert('Product added successfully');
-  };
-
-  const updateStock = (id, newStock) => {
-    setProducts(products.map(p => 
-      p.id === id ? { ...p, stock: parseInt(newStock) || 0 } : p
-    ));
-  };
-
-  const getSalesStats = (period) => {
-    const now = new Date();
-    let filterDate = new Date();
-
-    if (period === 'day') {
-      filterDate.setHours(0, 0, 0, 0);
-    } else if (period === 'week') {
-      filterDate.setDate(now.getDate() - 7);
-    } else if (period === 'month') {
-      filterDate.setMonth(now.getMonth() - 1);
-    }
-
-    const filtered = sales.filter(sale => new Date(sale.date) >= filterDate);
-    const total = filtered.reduce((sum, sale) => sum + sale.total, 0);
-    const count = filtered.length;
-
-    return { total, count, sales: filtered };
-  };
-
-  const stats = getSalesStats(statsPeriod);
-  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-  return (
-    <div className="min-h-screen bg-pink-50">
-      <div className="bg-pink-600 text-white p-4 shadow-lg">
-        <h1 className="text-2xl font-bold">🎂 Sweet Cakes POS System</h1>
-      </div>
-
-      <div className="bg-white border-b flex shadow-sm">
-        <button
-          onClick={() => setActiveTab('pos')}
-          className={`flex-1 py-3 px-4 font-medium flex items-center justify-center gap-2 transition ${
-            activeTab === 'pos' ? 'text-pink-600 border-b-2 border-pink-600 bg-pink-50' : 'text-gray-600 hover:bg-gray-50'
-          }`}
-        >
-          <ShoppingCart className="w-5 h-5" />
-          Sales
-        </button>
-        <button
-          onClick={() => setActiveTab('inventory')}
-          className={`flex-1 py-3 px-4 font-medium flex items-center justify-center gap-2 transition ${
-            activeTab === 'inventory' ? 'text-pink-600 border-b-2 border-pink-600 bg-pink-50' : 'text-gray-600 hover:bg-gray-50'
-          }`}
-        >
-          <Package className="w-5 h-5" />
-          Inventory
-        </button>
-        <button
-          onClick={() => setActiveTab('sales')}
-          className={`flex-1 py-3 px-4 font-medium flex items-center justify-center gap-2 transition ${
-            activeTab === 'sales' ? 'text-pink-600 border-b-2 border-pink-600 bg-pink-50' : 'text-gray-600 hover:bg-gray-50'
-          }`}
-        >
-          <TrendingUp className="w-5 h-5" />
-          Analytics
-        </button>
-      </div>
-
-      <div className="p-4 max-w-7xl mx-auto">
-        {activeTab === 'pos' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2">
-              <h2 className="text-xl font-bold mb-4 text-gray-800">Product Catalog</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {products.map(product => (
-                  <button
-                    key={product.id}
-                    onClick={() => addToCart(product)}
-                    disabled={product.stock === 0}
-                    className={`p-4 rounded-xl border-2 text-left transition transform hover:scale-105 ${
-                      product.stock === 0
-                        ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-60'
-                        : 'bg-white border-pink-200 hover:border-pink-400 hover:shadow-lg'
-                    }`}
-                  >
-                    <div className="font-bold text-lg text-gray-800">{product.name}</div>
-                    <div className="text-pink-600 font-semibold text-xl">₱{product.price.toLocaleString()}</div>
-                    <div className={`text-sm mt-1 ${product.stock < 10 ? 'text-red-500 font-semibold' : 'text-gray-500'}`}>
-                      Stock: {product.stock}
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">{product.category}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
-              <h2 className="text-xl font-bold mb-4 text-gray-800">Shopping Cart</h2>
-              <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
-                {cart.length === 0 ? (
-                  <div className="text-center text-gray-400 py-12">
-                    <ShoppingCart className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                    <p>Cart is empty</p>
-                  </div>
-                ) : (
-                  cart.map(item => (
-                    <div key={item.id} className="flex items-center justify-between border-b pb-3 hover:bg-pink-50 px-2 rounded transition">
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-800">{item.name}</div>
-                        <div className="text-sm text-gray-600">₱{item.price.toLocaleString()} × {item.quantity}</div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => updateQuantity(item.id, -1)} className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">−</button>
-                        <span className="w-8 text-center font-bold text-pink-600">{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item.id, 1)} className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">+</button>
-                        <button onClick={() => removeFromCart(item.id)} className="px-2 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200 transition">×</button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <div className="border-t pt-4">
-                <div className="flex justify-between text-2xl font-bold mb-4">
-                  <span className="text-gray-700">Total</span>
-                  <span className="text-pink-600">₱{cartTotal.toLocaleString()}</span>
-                </div>
-                <button
-                  onClick={completeSale}
-                  disabled={cart.length === 0}
-                  className={`w-full py-3 rounded-lg font-bold text-white transition transform active:scale-95 ${
-                    cart.length === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-pink-600 hover:bg-pink-700 shadow-md'
-                  }`}
-                >
-                  Complete Sale
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'inventory' && (
-          <div>
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Inventory Management</h2>
-            
-            <div className="bg-white p-4 rounded-xl shadow-md mb-6 border border-gray-200">
-              <h3 className="font-bold mb-3 text-gray-700">Add New Product</h3>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <input
-                  type="text"
-                  placeholder="Product Name"
-                  value={newProduct.name}
-                  onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
-                />
-                <input
-                  type="number"
-                  placeholder="Price"
-                  value={newProduct.price}
-                  onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
-                />
-                <input
-                  type="number"
-                  placeholder="Stock"
-                  value={newProduct.stock}
-                  onChange={(e) => setNewProduct({...newProduct, stock: e.target.value})}
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
-                />
-                <input
-                  type="text"
-                  placeholder="Category"
-                  value={newProduct.category}
-                  onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
-                />
-                <button onClick={addProduct} className="bg-pink-600 text-white rounded-lg hover:bg-pink-700 font-medium transition shadow-sm">Add Product</button>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-              <table className="w-full">
-                <thead className="bg-pink-100">
-                  <tr>
-                    <th className="text-left p-3 font-semibold text-gray-700">Product Name</th>
-                    <th className="text-left p-3 font-semibold text-gray-700">Category</th>
-                    <th className="text-right p-3 font-semibold text-gray-700">Price</th>
-                    <th className="text-right p-3 font-semibold text-gray-700">Stock</th>
-                    <th className="text-center p-3 font-semibold text-gray-700">Update Stock</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.map(product => (
-                    <tr key={product.id} className="border-b hover:bg-pink-50 transition">
-                      <td className="p-3 font-medium text-gray-800">{product.name}</td>
-                      <td className="p-3 text-gray-600">{product.category}</td>
-                      <td className="p-3 text-right text-gray-800">₱{product.price.toLocaleString()}</td>
-                      <td className={`p-3 text-right font-bold ${product.stock < 10 ? 'text-red-600' : 'text-green-600'}`}>
-                        {product.stock}
-                      </td>
-                      <td className="p-3 text-center">
-                        <input
-                          type="number"
-                          value={product.stock}
-                          onChange={(e) => updateStock(product.id, e.target.value)}
-                          className="w-20 border rounded-lg px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-pink-500"
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'sales' && (
-          <div>
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Sales Analytics</h2>
-            
-            <div className="flex gap-2 mb-6">
-              <button
-                onClick={() => setStatsPeriod('day')}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  statsPeriod === 'day' ? 'bg-pink-600 text-white shadow-md' : 'bg-white text-gray-700 border hover:bg-pink-50'
-                }`}
-              >
-                Today
-              </button>
-              <button
-                onClick={() => setStatsPeriod('week')}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  statsPeriod === 'week' ? 'bg-pink-600 text-white shadow-md' : 'bg-white text-gray-700 border hover:bg-pink-50'
-                }`}
-              >
-                Weekly
-              </button>
-              <button
-                onClick={() => setStatsPeriod('month')}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  statsPeriod === 'month' ? 'bg-pink-600 text-white shadow-md' : 'bg-white text-gray-700 border hover:bg-pink-50'
-                }`}
-              >
-                Monthly
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-gradient-to-br from-pink-500 to-pink-600 text-white p-6 rounded-xl shadow-lg">
-                <div className="text-pink-100 mb-2">Total Revenue</div>
-                <div className="text-3xl font-bold">₱{stats.total.toLocaleString()}</div>
-              </div>
-              <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg">
-                <div className="text-green-100 mb-2">Total Orders</div>
-                <div className="text-3xl font-bold">{stats.count}</div>
-              </div>
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
-                <div className="text-purple-100 mb-2">Average Order</div>
-                <div className="text-3xl font-bold">
-                  ₱{stats.count > 0 ? Math.round(stats.total / stats.count).toLocaleString() : '0'}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-              <h3 className="font-bold p-4 bg-pink-100 border-b text-gray-700">Transaction History</h3>
-              <div className="max-h-96 overflow-y-auto">
-                {stats.sales.length === 0 ? (
-                  <div className="p-8 text-center text-gray-400">
-                    <TrendingUp className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                    <p>No transactions for this period</p>
-                  </div>
-                ) : (
-                  stats.sales.map(sale => (
-                    <div key={sale.id} className="p-4 border-b hover:bg-pink-50 transition">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="text-sm text-gray-600">
-                          {new Date(sale.date).toLocaleString('en-US')}
-                        </div>
-                        <div className="font-bold text-pink-600 text-lg">₱{sale.total.toLocaleString()}</div>
-                      </div>
-                      <div className="text-sm text-gray-700">
-                        {sale.items.map((item, idx) => (
-                          <span key={idx}>
-                            {item.name} × {item.quantity}
-                            {idx < sale.items.length - 1 ? ', ' : ''}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sweet Cakes POS System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .active-tab {
+            color: rgb(219, 39, 119);
+            border-bottom: 2px solid rgb(219, 39, 119);
+            background-color: rgb(252, 231, 243);
+        }
+    </style>
+</head>
+<body class="bg-pink-50">
+    <div class="bg-pink-600 text-white p-4 shadow-lg">
+        <h1 class="text-2xl font-bold">🎂 Sweet Cakes POS System</h1>
     </div>
-  );
-}
+
+    <div class="bg-white border-b flex shadow-sm">
+        <button onclick="switchTab('sales')" id="tab-sales" class="flex-1 py-3 px-4 font-medium active-tab">
+            Sales
+        </button>
+        <button onclick="switchTab('inventory')" id="tab-inventory" class="flex-1 py-3 px-4 font-medium text-gray-600 hover:bg-gray-50">
+            Inventory
+        </button>
+        <button onclick="switchTab('analytics')" id="tab-analytics" class="flex-1 py-3 px-4 font-medium text-gray-600 hover:bg-gray-50">
+            Analytics
+        </button>
+    </div>
+
+    <div class="p-4 max-w-7xl mx-auto">
+        <!-- Sales Tab -->
+        <div id="content-sales">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="lg:col-span-2">
+                    <h2 class="text-xl font-bold mb-4 text-gray-800">Product Catalog</h2>
+                    <div id="product-grid" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
+                    <h2 class="text-xl font-bold mb-4 text-gray-800">Shopping Cart</h2>
+                    <div id="cart-items" class="space-y-3 mb-4 max-h-96 overflow-y-auto"></div>
+                    <div class="border-t pt-4">
+                        <div class="flex justify-between text-2xl font-bold mb-4">
+                            <span class="text-gray-700">Total</span>
+                            <span class="text-pink-600" id="cart-total">₱0</span>
+                        </div>
+                        <button onclick="completeSale()" class="w-full py-3 rounded-lg font-bold text-white bg-pink-600 hover:bg-pink-700 shadow-md">
+                            Complete Sale
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Tab -->
+        <div id="content-inventory" class="hidden">
+            <h2 class="text-xl font-bold mb-4 text-gray-800">Inventory Management</h2>
+            
+            <div class="bg-white p-4 rounded-xl shadow-md mb-6 border border-gray-200">
+                <h3 class="font-bold mb-3 text-gray-700">Add New Product</h3>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <input type="text" id="new-name" placeholder="Product Name" class="border rounded-lg px-3 py-2">
+                    <input type="number" id="new-price" placeholder="Price" class="border rounded-lg px-3 py-2">
+                    <input type="number" id="new-stock" placeholder="Stock" class="border rounded-lg px-3 py-2">
+                    <input type="text" id="new-category" placeholder="Category" class="border rounded-lg px-3 py-2">
+                    <button onclick="addProduct()" class="bg-pink-600 text-white rounded-lg hover:bg-pink-700 font-medium">Add Product</button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+                <table class="w-full">
+                    <thead class="bg-pink-100">
+                        <tr>
+                            <th class="text-left p-3 font-semibold text-gray-700">Product Name</th>
+                            <th class="text-left p-3 font-semibold text-gray-700">Category</th>
+                            <th class="text-right p-3 font-semibold text-gray-700">Price</th>
+                            <th class="text-right p-3 font-semibold text-gray-700">Stock</th>
+                            <th class="text-center p-3 font-semibold text-gray-700">Update Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-table"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="content-analytics" class="hidden">
+            <h2 class="text-xl font-bold mb-4 text-gray-800">Sales Analytics</h2>
+            
+            <div class="flex gap-2 mb-6">
+                <button onclick="changePeriod('day')" id="period-day" class="px-4 py-2 rounded-lg font-medium bg-pink-600 text-white shadow-md">Today</button>
+                <button onclick="changePeriod('week')" id="period-week" class="px-4 py-2 rounded-lg font-medium bg-white text-gray-700 border hover:bg-pink-50">Weekly</button>
+                <button onclick="changePeriod('month')" id="period-month" class="px-4 py-2 rounded-lg font-medium bg-white text-gray-700 border hover:bg-pink-50">Monthly</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-gradient-to-br from-pink-500 to-pink-600 text-white p-6 rounded-xl shadow-lg">
+                    <div class="text-pink-100 mb-2">Total Revenue</div>
+                    <div class="text-3xl font-bold" id="stat-total">₱0</div>
+                </div>
+                <div class="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg">
+                    <div class="text-green-100 mb-2">Total Orders</div>
+                    <div class="text-3xl font-bold" id="stat-count">0</div>
+                </div>
+                <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
+                    <div class="text-purple-100 mb-2">Average Order</div>
+                    <div class="text-3xl font-bold" id="stat-avg">₱0</div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+                <h3 class="font-bold p-4 bg-pink-100 border-b text-gray-700">Transaction History</h3>
+                <div class="max-h-96 overflow-y-auto" id="sales-history"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var products = [
+            { id: 1, name: 'Chocolate Cake', price: 850, stock: 25, category: 'Chocolate' },
+            { id: 2, name: 'Vanilla Cake', price: 750, stock: 30, category: 'Vanilla' },
+            { id: 3, name: 'Red Velvet Cake', price: 950, stock: 20, category: 'Specialty' },
+            { id: 4, name: 'Strawberry Cake', price: 900, stock: 18, category: 'Fruit' },
+            { id: 5, name: 'Cheesecake', price: 1050, stock: 15, category: 'Specialty' },
+            { id: 6, name: 'Carrot Cake', price: 800, stock: 22, category: 'Specialty' },
+            { id: 7, name: 'Tiramisu Cake', price: 1100, stock: 12, category: 'Specialty' },
+            { id: 8, name: 'Black Forest Cake', price: 950, stock: 16, category: 'Chocolate' }
+        ];
+        var cart = [];
+        var sales = [];
+        var currentPeriod = 'day';
+
+        function switchTab(tab) {
+            document.querySelectorAll('[id^="tab-"]').forEach(function(btn) {
+                btn.className = 'flex-1 py-3 px-4 font-medium text-gray-600 hover:bg-gray-50';
+            });
+            document.querySelectorAll('[id^="content-"]').forEach(function(content) {
+                content.classList.add('hidden');
+            });
+            
+            document.getElementById('tab-' + tab).className = 'flex-1 py-3 px-4 font-medium active-tab';
+            document.getElementById('content-' + tab).classList.remove('hidden');
+            
+            if (tab == 'sales') renderProducts();
+            if (tab == 'inventory') renderInventory();
+            if (tab == 'analytics') renderAnalytics();
+        }
+
+        function renderProducts() {
+            var grid = document.getElementById('product-grid');
+            grid.innerHTML = '';
+            products.forEach(function(product) {
+                var disabled = product.stock == 0;
+                var card = document.createElement('button');
+                card.onclick = disabled ? null : function() { addToCart(product.id); };
+                card.className = 'p-4 rounded-xl border-2 text-left transition transform hover:scale-105 ' + 
+                    (disabled ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-60' : 'bg-white border-pink-200 hover:border-pink-400 hover:shadow-lg');
+                card.innerHTML = '<div class="font-bold text-lg text-gray-800">' + product.name + '</div>' +
+                    '<div class="text-pink-600 font-semibold text-xl">₱' + product.price.toLocaleString() + '</div>' +
+                    '<div class="text-sm mt-1 ' + (product.stock < 10 ? 'text-red-500 font-semibold' : 'text-gray-500') + '">Stock: ' + product.stock + '</div>' +
+                    '<div class="text-xs text-gray-400 mt-1">' + product.category + '</div>';
+                grid.appendChild(card);
+            });
+        }
+
+        function addToCart(id) {
+            var product = products.find(function(p) { return p.id == id; });
+            var existing = cart.find(function(item) { return item.id == id; });
+            
+            if (existing) {
+                existing.quantity++;
+            } else {
+                cart.push({ id: product.id, name: product.name, price: product.price, quantity: 1 });
+            }
+            renderCart();
+        }
+
+        function renderCart() {
+            var container = document.getElementById('cart-items');
+            if (cart.length == 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-12">Cart is empty</div>';
+            } else {
+                container.innerHTML = '';
+                cart.forEach(function(item) {
+                    var div = document.createElement('div');
+                    div.className = 'flex items-center justify-between border-b pb-3 hover:bg-pink-50 px-2 rounded transition';
+                    div.innerHTML = '<div class="flex-1">' +
+                        '<div class="font-medium text-gray-800">' + item.name + '</div>' +
+                        '<div class="text-sm text-gray-600">₱' + item.price.toLocaleString() + ' × ' + item.quantity + '</div>' +
+                        '</div>' +
+                        '<div class="flex items-center gap-2">' +
+                        '<button onclick="updateQuantity(' + item.id + ', -1)" class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300">−</button>' +
+                        '<span class="w-8 text-center font-bold text-pink-600">' + item.quantity + '</span>' +
+                        '<button onclick="updateQuantity(' + item.id + ', 1)" class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300">+</button>' +
+                        '<button onclick="removeFromCart(' + item.id + ')" class="px-2 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200">×</button>' +
+                        '</div>';
+                    container.appendChild(div);
+                });
+            }
+            
+            var total = 0;
+            cart.forEach(function(item) { total = total + (item.price * item.quantity); });
+            document.getElementById('cart-total').textContent = '₱' + total.toLocaleString();
+        }
+
+        function updateQuantity(id, delta) {
+            var item = cart.find(function(i) { return i.id == id; });
+            if (item) {
+                item.quantity = item.quantity + delta;
+                if (item.quantity <= 0) {
+                    removeFromCart(id);
+                } else {
+                    renderCart();
+                }
+            }
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(function(item) { return item.id != id; });
+            renderCart();
+        }
+
+        function completeSale() {
+            if (cart.length == 0) {
+                alert('Cart is empty');
+                return;
+            }
+            
+            var total = 0;
+            cart.forEach(function(item) { total = total + (item.price * item.quantity); });
+            
+            var sale = { id: Date.now(), items: cart.slice(), total: total, date: new Date().toISOString() };
+            
+            cart.forEach(function(cartItem) {
+                var product = products.find(function(p) { return p.id == cartItem.id; });
+                if (product) product.stock = product.stock - cartItem.quantity;
+            });
+            
+            sales.unshift(sale);
+            cart = [];
+            renderProducts();
+            renderCart();
+            alert('Sale completed successfully!');
+        }
+
+        function addProduct() {
+            var name = document.getElementById('new-name').value;
+            var price = parseFloat(document.getElementById('new-price').value);
+            var stock = parseInt(document.getElementById('new-stock').value);
+            var category = document.getElementById('new-category').value || 'Other';
+            
+            if (!name || !price || !stock) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            products.push({ id: Date.now(), name: name, price: price, stock: stock, category: category });
+            document.getElementById('new-name').value = '';
+            document.getElementById('new-price').value = '';
+            document.getElementById('new-stock').value = '';
+            document.getElementById('new-category').value = '';
+            renderInventory();
+            alert('Product added successfully');
+        }
+
+        function renderInventory() {
+            var table = document.getElementById('inventory-table');
+            table.innerHTML = '';
+            products.forEach(function(product) {
+                var row = document.createElement('tr');
+                row.className = 'border-b hover:bg-pink-50 transition';
+                row.innerHTML = '<td class="p-3 font-medium text-gray-800">' + product.name + '</td>' +
+                    '<td class="p-3 text-gray-600">' + product.category + '</td>' +
+                    '<td class="p-3 text-right text-gray-800">₱' + product.price.toLocaleString() + '</td>' +
+                    '<td class="p-3 text-right font-bold ' + (product.stock < 10 ? 'text-red-600' : 'text-green-600') + '">' + product.stock + '</td>' +
+                    '<td class="p-3 text-center"><input type="number" value="' + product.stock + '" onchange="updateStock(' + product.id + ', this.value)" class="w-20 border rounded-lg px-2 py-1 text-center"></td>';
+                table.appendChild(row);
+            });
+        }
+
+        function updateStock(id, value) {
+            var product = products.find(function(p) { return p.id == id; });
+            if (product) {
+                product.stock = parseInt(value) || 0;
+                renderInventory();
+            }
+        }
+
+        function changePeriod(period) {
+            currentPeriod = period;
+            document.getElementById('period-day').className = 'px-4 py-2 rounded-lg font-medium bg-white text-gray-700 border hover:bg-pink-50';
+            document.getElementById('period-week').className = 'px-4 py-2 rounded-lg font-medium bg-white text-gray-700 border hover:bg-pink-50';
+            document.getElementById('period-month').className = 'px-4 py-2 rounded-lg font-medium bg-white text-gray-700 border hover:bg-pink-50';
+            document.getElementById('period-' + period).className = 'px-4 py-2 rounded-lg font-medium bg-pink-600 text-white shadow-md';
+            renderAnalytics();
+        }
+
+        function renderAnalytics() {
+            var now = new Date();
+            var filterDate = new Date();
+            
+            if (currentPeriod == 'day') {
+                filterDate.setHours(0, 0, 0, 0);
+            } else if (currentPeriod == 'week') {
+                filterDate.setDate(now.getDate() - 7);
+            } else if (currentPeriod == 'month') {
+                filterDate.setMonth(now.getMonth() - 1);
+            }
+            
+            var filtered = sales.filter(function(s) { return new Date(s.date) >= filterDate; });
+            var total = 0;
+            filtered.forEach(function(s) { total = total + s.total; });
+            var count = filtered.length;
+            var avg = count > 0 ? Math.round(total / count) : 0;
+            
+            document.getElementById('stat-total').textContent = '₱' + total.toLocaleString();
+            document.getElementById('stat-count').textContent = count;
+            document.getElementById('stat-avg').textContent = '₱' + avg.toLocaleString();
+            
+            var history = document.getElementById('sales-history');
+            if (filtered.length == 0) {
+                history.innerHTML = '<div class="p-8 text-center text-gray-400">No transactions for this period</div>';
+            } else {
+                history.innerHTML = '';
+                filtered.forEach(function(sale) {
+                    var div = document.createElement('div');
+                    div.className = 'p-4 border-b hover:bg-pink-50 transition';
+                    var items = '';
+                    sale.items.forEach(function(item, i) {
+                        items = items + item.name + ' × ' + item.quantity;
+                        if (i < sale.items.length - 1) items = items + ', ';
+                    });
+                    div.innerHTML = '<div class="flex justify-between items-start mb-2">' +
+                        '<div class="text-sm text-gray-600">' + new Date(sale.date).toLocaleString() + '</div>' +
+                        '<div class="font-bold text-pink-600 text-lg">₱' + sale.total.toLocaleString() + '</div>' +
+                        '</div>' +
+                        '<div class="text-sm text-gray-700">' + items + '</div>';
+                    history.appendChild(div);
+                });
+            }
+        }
+
+        renderProducts();
+        renderCart();
+    </script>
+</body>
+</html>
