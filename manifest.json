@@ -1,0 +1,18 @@
+{
+  "name": "Sweet Cakes POS System",
+  "short_name": "Sweet Cakes",
+  "description": "Point of Sale system for Sweet Cakes bakery",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#fce7f3",
+  "theme_color": "#db2777",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23db2777'/><text x='50' y='75' font-size='70' text-anchor='middle' fill='white'>🎂</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
