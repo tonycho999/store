@@ -80,6 +80,7 @@
                             <th class="text-right p-3">Price</th>
                             <th class="text-right p-3">Stock</th>
                             <th class="text-center p-3">Update</th>
+                            <th class="text-center p-3">Action</th>
                         </tr>
                     </thead>
                     <tbody id="inventory-table"></tbody>
@@ -269,14 +270,31 @@
                 table.innerHTML = '';
                 products.forEach(function(product) {
                     var row = document.createElement('tr');
-                    row.className = 'border-b';
+                    row.className = 'border-b hover:bg-pink-50';
                     row.innerHTML = '<td class="p-3 font-medium">' + product.name + '</td>' +
                         '<td class="p-3 text-right">₱' + product.price.toLocaleString() + '</td>' +
                         '<td class="p-3 text-right font-bold ' + (product.stock < 10 ? 'text-red-600' : 'text-green-600') + '">' + product.stock + '</td>' +
-                        '<td class="p-3 text-center"><input type="number" value="' + product.stock + '" onchange="updateStock(' + product.id + ', this.value)" class="w-16 border rounded px-2 py-1 text-center"></td>';
+                        '<td class="p-3 text-center">' +
+                        '<input type="number" value="' + product.stock + '" onchange="updateStock(' + product.id + ', this.value)" class="w-16 border rounded px-2 py-1 text-center">' +
+                        '</td>' +
+                        '<td class="p-3 text-center">' +
+                        '<button onclick="confirmDeleteProduct(' + product.id + ', \'' + product.name.replace(/'/g, "\\'") + '\')" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 active:bg-red-700 text-sm font-medium">Delete</button>' +
+                        '</td>';
                     table.appendChild(row);
                 });
             });
+        }
+
+        function confirmDeleteProduct(id, name) {
+            if (confirm('Are you sure you want to delete "' + name + '"? This action cannot be undone.')) {
+                deleteProduct(id).then(function() {
+                    renderInventory();
+                    renderProducts();
+                    alert('Product deleted successfully');
+                }).catch(function(error) {
+                    alert('Error deleting product: ' + error);
+                });
+            }
         }
 
         function updateStock(id, value) {
